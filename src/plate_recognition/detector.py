@@ -3,6 +3,7 @@
 import hashlib
 import os
 from pathlib import Path
+import re
 import sys
 from typing import Any
 
@@ -59,9 +60,31 @@ def model_classes(model: Any) -> dict[int, str]:
     return dict(sorted(classes.items()))
 
 
-def inspect_yolo_model(weights: str, class_id: int) -> dict:
+def file_sha256(path: Path) -> str:
+    """Calcula SHA-256 sin cargar ni interpretar el contenido del archivo."""
+    digest = hashlib.sha256()
+    try:
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+    except OSError as exc:
+        raise ALPRError(f"No se pudo calcular SHA-256 de {path}: {exc}") from exc
+    return digest.hexdigest()
+
+
+def inspect_yolo_model(weights: str, class_id: int,
+                       expected_sha256: str | None = None) -> dict:
     """Carga un checkpoint local y devuelve información suficiente para integrarlo."""
-    path = Path(weights).resolve()
+    path = require_file(Path(weights))
+    checksum = file_sha256(path)
+    if expected_sha256 is not None:
+        expected = expected_sha256.strip().lower()
+        if re.fullmatch(r"[0-9a-f]{64}", expected) is None:
+            raise ALPRError("La huella SHA-256 esperada debe contener 64 caracteres hexadecimales.")
+        if checksum != expected:
+            raise ALPRError(
+                f"La huella SHA-256 no coincide: esperada {expected}, obtenida {checksum}."
+            )
     model = load_yolo(str(path))
     task = getattr(model, "task", "detect")
     if task != "detect":
@@ -69,16 +92,12 @@ def inspect_yolo_model(weights: str, class_id: int) -> dict:
     classes = model_classes(model)
     if class_id not in classes:
         raise ALPRError(f"class_id={class_id} no existe; disponibles: {list(classes)}")
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
     return {
         "schema_version": "1.0",
         "compatible": True,
         "weights": str(path),
         "file_size_bytes": path.stat().st_size,
-        "sha256": digest.hexdigest(),
+        "sha256": checksum,
         "task": task,
         "classes": [{"id": index, "name": name} for index, name in classes.items()],
         "selected_class": {"id": class_id, "name": classes[class_id]},

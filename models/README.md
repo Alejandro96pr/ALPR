@@ -18,6 +18,8 @@ El comando confirma que es un detector, lista sus clases y calcula SHA-256. Si l
 matrícula no es la clase 0, usa `--class-id N` y conserva ese valor en la
 configuración. Copia `plate.metadata.example.yaml` como `plate.metadata.yaml` para
 documentar origen, licencia, alcance y huella del modelo real.
+Cuando conozcas de antemano la huella del proveedor, añade
+`--expected-sha256 <sha256>` para validarla antes de cargar el checkpoint.
 
 Tesseract necesita el ejecutable y `eng.traineddata` (u otro idioma). Instálalos
 explícitamente siguiendo https://tesseract-ocr.github.io/tessdoc/Installation.html

@@ -90,8 +90,21 @@ def test_config_path_and_override(tmp_path):
 def test_cli_check_model_writes_report(tmp_path, monkeypatch):
     report = {"schema_version": "1.0", "compatible": True}
     monkeypatch.setattr("plate_recognition.detector.inspect_yolo_model",
-                        lambda weights, class_id: report)
+                        lambda weights, class_id, expected_sha256: report)
     output = tmp_path / "model.json"
     assert cli.main(["check-model", "--weights", str(tmp_path / "plate.pt"),
-                     "--class-id", "2", "--output", str(output)]) == 0
+                     "--class-id", "2", "--expected-sha256", "a" * 64,
+                     "--output", str(output)]) == 0
     assert json.loads(output.read_text()) == report
+
+
+def test_cli_check_model_rejects_existing_output_before_loading(tmp_path, monkeypatch):
+    output = tmp_path / "model.json"
+    output.write_text("{}")
+    inspect = Mock()
+    monkeypatch.setattr("plate_recognition.detector.inspect_yolo_model", inspect)
+
+    assert cli.main(["check-model", "--weights", str(tmp_path / "plate.pt"),
+                     "--output", str(output)]) == 2
+
+    inspect.assert_not_called()

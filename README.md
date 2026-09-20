@@ -146,6 +146,9 @@ La copia debe hacerse manualmente desde una fuente conocida. `check-model` no
 descarga ni modifica pesos: verifica que el archivo se puede cargar como detector,
 lista sus clases, comprueba `class_id` y calcula SHA-256. Completa después
 `models/plate.metadata.example.yaml` y conserva el resultado junto al modelo.
+Si el proveedor publica una huella, pásala mediante
+`--expected-sha256 <sha256>`: se comprobará antes de deserializar los pesos y el
+comando abortará si el archivo no coincide.
 
 No distribuimos pesos de terceros. Revisa la licencia de cada dataset y cada peso;
 un enlace público no concede automáticamente derechos de uso o redistribución.

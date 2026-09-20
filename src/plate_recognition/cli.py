@@ -46,6 +46,10 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument("--iou", type=float, default=0.5)
         if name == "check-model":
             command.add_argument("--output", type=Path, help="Guardar el informe JSON")
+            command.add_argument(
+                "--expected-sha256",
+                help="Huella conocida; se verifica antes de cargar el checkpoint",
+            )
     prepare = sub.add_parser("prepare-data", help="Convertir manifiesto y dividir por grupos")
     prepare.add_argument("--manifest", type=Path, required=True)
     prepare.add_argument("--destination", type=Path, required=True)
@@ -86,9 +90,10 @@ def execute(args: argparse.Namespace) -> None:
         from .detector import inspect_yolo_model
         from .io import check_outputs, write_json
 
-        report = inspect_yolo_model(config.weights, config.class_id)
         if args.output:
             check_outputs(Path(config.weights), args.output)
+        report = inspect_yolo_model(config.weights, config.class_id, args.expected_sha256)
+        if args.output:
             write_json(args.output, report)
             print(args.output)
         else:

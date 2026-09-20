@@ -6,7 +6,13 @@ import pytest
 
 from plate_recognition.config import Config
 from plate_recognition.data import prepare_dataset
-from plate_recognition.detector import YOLODetector, inspect_yolo_model, load_yolo, model_classes
+from plate_recognition.detector import (
+    YOLODetector,
+    file_sha256,
+    inspect_yolo_model,
+    load_yolo,
+    model_classes,
+)
 from plate_recognition.errors import ALPRError
 from plate_recognition.ocr import TesseractOCR
 from plate_recognition.synthetic import generate_fixtures
@@ -58,6 +64,37 @@ def test_model_inspection_reports_classes_and_checksum(tmp_path, monkeypatch):
     assert report["classes"] == [{"id": 0, "name": "vehicle"},
                                   {"id": 1, "name": "plate"}]
     assert len(report["sha256"]) == 64
+
+
+def test_model_inspection_checks_checksum_before_loading(tmp_path, monkeypatch):
+    path = tmp_path / "plate.pt"
+    path.write_bytes(b"trusted-test-weights")
+    load = Mock()
+    monkeypatch.setattr("plate_recognition.detector.load_yolo", load)
+
+    with pytest.raises(ALPRError, match="no coincide"):
+        inspect_yolo_model(str(path), 0, "0" * 64)
+
+    load.assert_not_called()
+
+
+def test_model_inspection_accepts_known_checksum(tmp_path, monkeypatch):
+    path = tmp_path / "plate.pt"
+    path.write_bytes(b"trusted-test-weights")
+    model = SimpleNamespace(names={0: "plate"}, task="detect")
+    monkeypatch.setattr("plate_recognition.detector.load_yolo", lambda weights: model)
+
+    report = inspect_yolo_model(str(path), 0, file_sha256(path).upper())
+
+    assert report["selected_class"]["name"] == "plate"
+
+
+@pytest.mark.parametrize("checksum", ["", "abc", "g" * 64])
+def test_model_inspection_rejects_invalid_checksum(tmp_path, checksum):
+    path = tmp_path / "plate.pt"
+    path.write_bytes(b"trusted-test-weights")
+    with pytest.raises(ALPRError, match="64 caracteres hexadecimales"):
+        inspect_yolo_model(str(path), 0, checksum)
 
 
 def test_model_inspection_rejects_wrong_task_or_class(tmp_path, monkeypatch):
