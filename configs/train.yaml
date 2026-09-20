@@ -1,0 +1,11 @@
+# Peso COCO local: punto de partida para ajustar la clase plate, no para inferirla.
+weights: ../models/yolo11n.pt
+device: cpu
+epochs: 50
+batch: 8
+image_size: 640
+seed: 42
+learning_rate: 0.001
+project: ../outputs/training
+run_name: plates
+

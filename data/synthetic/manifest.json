@@ -1,0 +1,52 @@
+[
+  {
+    "image": "test_0.png",
+    "group": "synthetic-0",
+    "plates": [
+      {
+        "bbox": [
+          60,
+          60,
+          260,
+          110
+        ],
+        "text": "TEST-0"
+      }
+    ]
+  },
+  {
+    "image": "test_1.png",
+    "group": "synthetic-1",
+    "plates": [
+      {
+        "bbox": [
+          65,
+          60,
+          265,
+          110
+        ],
+        "text": "TEST-1"
+      }
+    ]
+  },
+  {
+    "image": "test_2.png",
+    "group": "synthetic-2",
+    "plates": [
+      {
+        "bbox": [
+          70,
+          60,
+          270,
+          110
+        ],
+        "text": "TEST-2"
+      }
+    ]
+  },
+  {
+    "image": "test_3.png",
+    "group": "synthetic-0",
+    "plates": []
+  }
+]

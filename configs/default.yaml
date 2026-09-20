@@ -1,0 +1,22 @@
+# Rutas relativas a este archivo. Overrides CLI relativos al directorio actual.
+weights: ../models/plate.pt
+device: cpu
+confidence: 0.25
+nms_iou: 0.45
+image_size: 640
+class_id: 0
+language: eng
+tessdata_dir: null
+tesseract_cmd: tesseract
+psm: 7
+ocr_timeout: 10.0
+ocr_height: 64
+binarize: false
+normalize: true
+seed: 42
+epochs: 50
+batch: 8
+learning_rate: 0.001
+project: ../outputs/training
+run_name: plates
+

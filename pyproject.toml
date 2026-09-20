@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=77,<81"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "plate-recognition-local"
+version = "0.1.0"
+description = "ALPR local modular con YOLO y Tesseract"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "numpy==2.2.6",
+  "opencv-python==4.12.0.88",
+  "Pillow==12.0.0",
+  "PyYAML==6.0.3",
+]
+
+[project.optional-dependencies]
+detector = ["ultralytics==8.3.221", "torch==2.9.0", "torchvision==0.24.0"]
+ocr = ["pytesseract==0.3.13"]
+dev = ["pytest==8.4.2", "jsonschema==4.25.1", "ruff==0.14.3"]
+
+[project.scripts]
+alpr = "plate_recognition.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+

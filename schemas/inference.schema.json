@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ALPR inference 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "media_type", "source", "frames"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "media_type": {"enum": ["image", "video"]},
+    "source": {"type": "string"},
+    "fps": {"type": "number", "exclusiveMinimum": 0},
+    "timestamp_basis": {"const": "frame_index/fps"},
+    "frame_count": {"type": "integer", "minimum": 1},
+    "frames": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["frame_index", "timestamp_seconds", "width", "height", "plates"],
+        "properties": {
+          "frame_index": {"type": ["integer", "null"], "minimum": 0},
+          "timestamp_seconds": {"type": ["number", "null"], "minimum": 0},
+          "width": {"type": "integer", "minimum": 1},
+          "height": {"type": "integer", "minimum": 1},
+          "plates": {
+            "type": "array",
+            "items": {
+              "type": "object", "additionalProperties": false,
+              "required": ["bbox", "text", "raw_text", "detection_confidence", "ocr_confidence", "confidence"],
+              "properties": {
+                "bbox": {"type": "array", "minItems": 4, "maxItems": 4,
+                         "items": {"type": "integer", "minimum": 0}},
+                "text": {"type": "string"},
+                "raw_text": {"type": "string"},
+                "detection_confidence": {"$ref": "#/$defs/confidence"},
+                "ocr_confidence": {"$ref": "#/$defs/confidence"},
+                "confidence": {"$ref": "#/$defs/confidence"}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [{
+    "if": {"properties": {"media_type": {"const": "video"}}},
+    "then": {"required": ["fps", "timestamp_basis", "frame_count"], "properties": {
+      "frames": {"items": {"properties": {
+        "frame_index": {"type": "integer"}, "timestamp_seconds": {"type": "number"}
+      }}}
+    }},
+    "else": {"properties": {"frames": {"maxItems": 1, "items": {"properties": {
+      "frame_index": {"type": "null"}, "timestamp_seconds": {"type": "null"}
+    }}}}}
+  }],
+  "$defs": {"confidence": {"type": "number", "minimum": 0, "maximum": 1}}
+}
+
