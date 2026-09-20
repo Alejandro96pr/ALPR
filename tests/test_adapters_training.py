@@ -6,7 +6,7 @@ import pytest
 
 from plate_recognition.config import Config
 from plate_recognition.data import prepare_dataset
-from plate_recognition.detector import YOLODetector, load_yolo
+from plate_recognition.detector import YOLODetector, inspect_yolo_model, load_yolo, model_classes
 from plate_recognition.errors import ALPRError
 from plate_recognition.ocr import TesseractOCR
 from plate_recognition.synthetic import generate_fixtures
@@ -45,6 +45,37 @@ def test_yolo_adapter_uses_local_array_and_scales_no_boxes(tmp_path, monkeypatch
     assert result[0].confidence == 0.75
     assert model.predict.call_args.kwargs["source"] is frame
     assert settings.update.call_args.args[0]["sync"] is False
+
+
+def test_model_inspection_reports_classes_and_checksum(tmp_path, monkeypatch):
+    path = tmp_path / "plate.pt"
+    path.write_bytes(b"trusted-test-weights")
+    model = SimpleNamespace(names=["vehicle", "plate"], task="detect")
+    monkeypatch.setattr("plate_recognition.detector.load_yolo", lambda weights: model)
+    report = inspect_yolo_model(str(path), 1)
+    assert report["compatible"] is True
+    assert report["selected_class"] == {"id": 1, "name": "plate"}
+    assert report["classes"] == [{"id": 0, "name": "vehicle"},
+                                  {"id": 1, "name": "plate"}]
+    assert len(report["sha256"]) == 64
+
+
+def test_model_inspection_rejects_wrong_task_or_class(tmp_path, monkeypatch):
+    path = tmp_path / "plate.pt"
+    path.write_bytes(b"trusted-test-weights")
+    monkeypatch.setattr("plate_recognition.detector.load_yolo",
+                        lambda weights: SimpleNamespace(names={0: "plate"}, task="segment"))
+    with pytest.raises(ALPRError, match="tarea"):
+        inspect_yolo_model(str(path), 0)
+    monkeypatch.setattr("plate_recognition.detector.load_yolo",
+                        lambda weights: SimpleNamespace(names={0: "plate"}, task="detect"))
+    with pytest.raises(ALPRError, match="disponibles"):
+        inspect_yolo_model(str(path), 2)
+
+
+def test_model_classes_rejects_invalid_metadata():
+    with pytest.raises(ALPRError, match="clases"):
+        model_classes(SimpleNamespace(names={}))
 
 
 def test_ocr_adapter_and_confidence(monkeypatch, frame):

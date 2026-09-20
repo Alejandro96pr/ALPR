@@ -21,7 +21,7 @@ def validate_result(data):
 
 
 @pytest.mark.parametrize("command", [None, "image", "video", "train", "eval-detector",
-                                     "eval-reading", "prepare-data", "synthetic"])
+                                     "eval-reading", "check-model", "prepare-data", "synthetic"])
 def test_help(command, capsys):
     with pytest.raises(SystemExit) as exc:
         cli.main(([command] if command else []) + ["--help"])
@@ -86,3 +86,12 @@ def test_config_path_and_override(tmp_path):
     assert load_config(path).weights == str(tmp_path / "model.pt")
     assert load_config(path, weights="other.pt").weights == "other.pt"
 
+
+def test_cli_check_model_writes_report(tmp_path, monkeypatch):
+    report = {"schema_version": "1.0", "compatible": True}
+    monkeypatch.setattr("plate_recognition.detector.inspect_yolo_model",
+                        lambda weights, class_id: report)
+    output = tmp_path / "model.json"
+    assert cli.main(["check-model", "--weights", str(tmp_path / "plate.pt"),
+                     "--class-id", "2", "--output", str(output)]) == 0
+    assert json.loads(output.read_text()) == report

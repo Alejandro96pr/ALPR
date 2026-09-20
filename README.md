@@ -134,6 +134,19 @@ La disponibilidad y reproducibilidad dependen del hardware y de las wheels.
    ajustado por este proyecto se guarda en `outputs/training/plates/weights/best.pt`.
 3. **Tesseract 5 y datos de idioma** de las fuentes anteriores.
 
+Cuando llegue el detector, la integración básica queda reducida a copiarlo y
+validarlo; no hace falta cambiar el código:
+
+```bash
+cp /ruta/autorizada/del/modelo.pt models/plate.pt
+alpr check-model --config configs/default.yaml --output outputs/model-check.json
+```
+
+La copia debe hacerse manualmente desde una fuente conocida. `check-model` no
+descarga ni modifica pesos: verifica que el archivo se puede cargar como detector,
+lista sus clases, comprueba `class_id` y calcula SHA-256. Completa después
+`models/plate.metadata.example.yaml` y conserva el resultado junto al modelo.
+
 No distribuimos pesos de terceros. Revisa la licencia de cada dataset y cada peso;
 un enlace público no concede automáticamente derechos de uso o redistribución.
 Solo carga checkpoints `.pt` confiables: su serialización puede ejecutar código.

@@ -1,0 +1,10 @@
+# Copia este archivo como plate.metadata.yaml cuando incorpores pesos reales.
+model_name: "nombre-del-modelo"
+weights: "plate.pt"
+source: "URL, repositorio o experimento propio"
+license: "licencia verificada"
+class_id: 0
+class_name: "plate"
+sha256: "pega aquí el valor mostrado por alpr check-model"
+trained_for: "países, formatos y condiciones representadas en los datos"
+limitations: "condiciones conocidas en las que el modelo puede fallar"

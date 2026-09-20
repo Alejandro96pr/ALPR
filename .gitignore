@@ -11,6 +11,7 @@ dist/
 htmlcov/
 models/*
 !models/README.md
+!models/*.example.yaml
 outputs/*
 !outputs/.gitkeep
 data/*
@@ -21,4 +22,3 @@ data/*
 *.traineddata
 *.cache
 .env
-

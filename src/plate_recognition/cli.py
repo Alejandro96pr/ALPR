@@ -14,11 +14,13 @@ def parser() -> argparse.ArgumentParser:
     for name, help_text in (("image", "Inferir una imagen"), ("video", "Procesar todos los frames"),
                             ("train", "Ajustar detector con datos propios"),
                             ("eval-detector", "Precision, recall y mAP del detector"),
-                            ("eval-reading", "Exactitud y CER de OCR y extremo a extremo")):
+                            ("eval-reading", "Exactitud y CER de OCR y extremo a extremo"),
+                            ("check-model", "Comprobar un futuro detector YOLO local")):
         command = sub.add_parser(name, help=help_text)
         command.add_argument("--config", type=Path, help="Archivo YAML de configuración")
         command.add_argument("--weights", help="Checkpoint YOLO .pt local")
         command.add_argument("--device", help="cpu, mps o índice CUDA, p. ej. 0")
+        command.add_argument("--class-id", type=int, help="Índice de la clase matrícula")
         if name in ("image", "video", "eval-reading"):
             command.add_argument("--language", help="Idioma Tesseract, p. ej. eng o eng+spa")
             command.add_argument("--confidence", type=float, help="Umbral de detección")
@@ -42,6 +44,8 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument("--manifest", type=Path, required=True)
             command.add_argument("--mode", choices=("ocr", "e2e"), default="ocr")
             command.add_argument("--iou", type=float, default=0.5)
+        if name == "check-model":
+            command.add_argument("--output", type=Path, help="Guardar el informe JSON")
     prepare = sub.add_parser("prepare-data", help="Convertir manifiesto y dividir por grupos")
     prepare.add_argument("--manifest", type=Path, required=True)
     prepare.add_argument("--destination", type=Path, required=True)
@@ -73,9 +77,23 @@ def execute(args: argparse.Namespace) -> None:
         print(prepare_dataset(args.manifest, args.destination, args.seed,
                               args.train_fraction, args.val_fraction))
         return
-    keys = ("weights", "device", "language", "confidence", "project", "run_name", "batch",
-            "image_size", "epochs", "seed", "learning_rate")
+    keys = ("weights", "device", "class_id", "language", "confidence", "project", "run_name",
+            "batch", "image_size", "epochs", "seed", "learning_rate")
     config = load_config(args.config, **{key: getattr(args, key, None) for key in keys})
+    if args.command == "check-model":
+        import json
+
+        from .detector import inspect_yolo_model
+        from .io import check_outputs, write_json
+
+        report = inspect_yolo_model(config.weights, config.class_id)
+        if args.output:
+            check_outputs(Path(config.weights), args.output)
+            write_json(args.output, report)
+            print(args.output)
+        else:
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+        return
     if args.command in ("train", "eval-detector"):
         from .training import run_detector
 
@@ -126,4 +144,3 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("Interrumpido por el usuario.", file=sys.stderr)
         return 130
-
